@@ -10,22 +10,29 @@ end
 
 -- прочитаем граф
 function File:read_graph(path)
-    local nodes = {}
+    local graph = {}
 
     if not self:file_exists(path) then
         return false
     end
 
-    local gm = string.gmatch
+    local gmatch = string.gmatch
+
+    local buf = {}
 
     for line in io.lines(path) do
-        nodes[#nodes + 1] = {}
-        for n in gm(line, "[^\t]+") do
-            table.insert(nodes[#nodes], n)
+        buf = {}
+
+        for n in gmatch(line, "[^\t]+") do
+            table.insert(buf, tonumber(n))
         end
+        local edge = { buf[1], buf[2] }
+
+        table.sort(edge)
+        graph[edge] = { buf[3], }
     end
 
-    return nodes
+    return graph
 end
 
 return File
