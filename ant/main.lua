@@ -7,7 +7,7 @@ local Ant        = require("ant")
 
 local ALPHA      = os.getenv("ALPHA") or 1   -- важность феромонов
 local BETA       = os.getenv("BETA") or 1    -- важность весов
-local Q          = os.getenv("BETA") or 4    -- интенсивность феромона
+local Q          = os.getenv("Q") or 4       -- интенсивность феромона
 local P          = os.getenv("P") or 0.6     -- процент остающихся феромонов
 local NUM_ANTS   = os.getenv("ANTS") or 100  -- Количество муравьев
 local NUM_ITERS  = os.getenv("ITERS") or 100 -- Количество итераций
