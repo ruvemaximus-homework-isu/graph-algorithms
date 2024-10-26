@@ -1,35 +1,43 @@
 local File = {}
 File.__index = File
 
--- проверим, что файл существует
-function File:file_exists(path)
-    local f = io.open(path, "rb")
-    if f then f:close() end
-    return f ~= nil
+-- конструктор
+function File:new(path)
+    local instance = setmetatable({}, File)
+
+    instance.path = path
+
+    return instance
 end
 
 -- прочитаем граф
-function File:read_graph(path)
-    local graph = {}
-
-    if not self:file_exists(path) then
-        return false
-    end
-
+function File:read_as_graph()
     local gmatch = string.gmatch
 
     local buf = {}
 
-    for line in io.lines(path) do
+    local file = io.open(self.path, "r")
+    if file == nil then
+        error("File '" .. self.path .. "' does not exist")
+    end
+
+    local _ = file:read() -- пропустим первую строку с заголовком
+
+    if file == nil then
+        error("File contains only 1 line")
+    end
+
+    local graph = {}
+
+    for line in file:lines() do
         buf = {}
 
-        for n in gmatch(line, "[^\t]+") do
-            table.insert(buf, tonumber(n))
+        for cell in gmatch(line, "[^\t]+") do
+            table.insert(buf, cell)
         end
-        local edge = { buf[1], buf[2] }
 
-        table.sort(edge)
-        graph[edge] = { buf[3], }
+        graph[buf[1]] = graph[buf[1]] or {}
+        graph[buf[1]][buf[2]] = { weight = tonumber(buf[3]), pheromone = 1 }
     end
 
     return graph
