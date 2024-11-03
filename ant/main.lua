@@ -2,6 +2,11 @@
 
 local input_file = arg[1]
 
+if not input_file then
+    print("Usage: lua main.lua <input_file>")
+    os.exit(1)
+end
+
 local File       = require("file")
 local Ant        = require("ant")
 
@@ -9,13 +14,9 @@ local ALPHA      = os.getenv("ALPHA") or 1   -- важность феромон�
 local BETA       = os.getenv("BETA") or 1    -- важность весов
 local Q          = os.getenv("Q") or 4       -- интенсивность феромона
 local P          = os.getenv("P") or 0.6     -- процент остающихся феромонов
-local NUM_ANTS   = os.getenv("ANTS") or 100  -- Количество муравьев
-local NUM_ITERS  = os.getenv("ITERS") or 100 -- Количество итераций
-
-if not input_file then
-    print("Usage: lua main.lua <input_file>")
-    os.exit(1)
-end
+local NUM_ANTS   = os.getenv("ANTS") or 1  -- Количество муравьев
+local NUM_ITERS  = os.getenv("ITERS") or 1 -- Количество итераций
+local START_NODE = os.getenv("START_NODE") or "RAND"   -- Начальная точка муравьев
 
 -- Создаём экземпляр класса File
 local file = File:new(input_file)
@@ -30,10 +31,27 @@ for node, _ in pairs(graph) do
     table.insert(nodes, node)
 end
 
-local rand = math.random
+print(string.format("Found %d nodes", graph.nodesCount))
 
-local function get_start_node()
-    return nodes[rand(1, #nodes)]
+local get_start_node
+
+if START_NODE == "RAND" then
+    local rand = math.random
+    get_start_node = function()
+        return nodes[rand(1, #nodes)]
+    end
+else
+    get_start_node = function()
+        return START_NODE
+    end
+end
+
+local function update_edge_pheromone(source, target, delta)
+    local edge = graph[source][target]
+    edge.pheromone = P * edge.pheromone + delta
+
+    -- edge = graph[target][source]
+    -- edge.pheromone = P * edge.pheromone + delta
 end
 
 local startTime = os.clock()
@@ -66,13 +84,17 @@ for iter = 1, NUM_ITERS do
         local delta = Q / ant.total_distance
 
         for j = 1, #ant.path - 1 do
-            local edge = graph[ant.path[j]][ant.path[j + 1]]
-            edge.pheromone = P * edge.pheromone + delta
+            update_edge_pheromone(ant.path[j], ant.path[j + 1], delta)
         end
     end
 
     print(string.format("[main] Iteration %d/%d complete (%.2fs)", iter, NUM_ITERS, os.clock() - iterStartTime))
-    print(string.format("[main] Best distance: %d", best_distance))
+    --  print(string.format("[main] Best distance: %d", best_distance))
+end
+
+if best_path == nil then
+    print("Best path not found :(")
+    os.exit(0)
 end
 
 -- Выводим лучший найденный путь и его длину
