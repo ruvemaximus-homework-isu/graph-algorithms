@@ -1,9 +1,15 @@
 #!/usr/bin/env lua
 
 local input_file = arg[1]
+local output_file = io.open("output.csv", "w")
+
 
 if not input_file then
     print("Usage: lua main.lua <input_file>")
+    os.exit(1)
+end
+
+if not output_file then
     os.exit(1)
 end
 
@@ -14,12 +20,13 @@ local ALPHA      = os.getenv("ALPHA") or 1   -- важность феромон�
 local BETA       = os.getenv("BETA") or 1    -- важность весов
 local Q          = os.getenv("Q") or 4       -- интенсивность феромона
 local P          = os.getenv("P") or 0.6     -- процент остающихся феромонов
-local NUM_ANTS   = os.getenv("ANTS") or 1  -- Количество муравьев
-local NUM_ITERS  = os.getenv("ITERS") or 1 -- Количество итераций
+local NUM_ANTS   = os.getenv("ANTS") or 100  -- Количество муравьев
+local NUM_ITERS  = os.getenv("ITERS") or 100 -- Количество итераций
 local START_NODE = os.getenv("START_NODE") or "RAND"   -- Начальная точка муравьев
 
 -- Создаём экземпляр класса File
 local file = File:new(input_file)
+local nodesCount = 0
 
 local graph = file:read_as_graph()
 
@@ -29,22 +36,25 @@ local best_distance = math.huge
 local nodes = {}
 for node, _ in pairs(graph) do
     table.insert(nodes, node)
+    nodesCount = nodesCount + 1
 end
 
-print(string.format("Found %d nodes", graph.nodesCount))
+print(string.format("Found %d nodes", nodesCount))
 
 local get_start_node
 
 if START_NODE == "RAND" then
     local rand = math.random
     get_start_node = function()
-        return nodes[rand(1, #nodes)]
+        return nodes[rand(1, nodesCount)]
     end
 else
     get_start_node = function()
         return START_NODE
     end
 end
+
+output_file:write("iteration,best_route_length\n")
 
 local function update_edge_pheromone(source, target, delta)
     local edge = graph[source][target]
@@ -61,10 +71,12 @@ for iter = 1, NUM_ITERS do
     local ants = {}
     local iterStartTime = os.clock()
 
+    -- Запускаем муравьев
     for i = 1, NUM_ANTS do
         ants[i] = Ant:new(get_start_node())
 
         local ant = ants[i]
+
         for _ = 1, #nodes do
             local next_node = ant:choose_next_node(graph, ALPHA, BETA)
             if not next_node then break end
@@ -89,8 +101,10 @@ for iter = 1, NUM_ITERS do
     end
 
     print(string.format("[main] Iteration %d/%d complete (%.2fs)", iter, NUM_ITERS, os.clock() - iterStartTime))
-    --  print(string.format("[main] Best distance: %d", best_distance))
+    output_file:write(iter .. "," .. best_distance .. "\n")
 end
+
+output_file:close()
 
 if best_path == nil then
     print("Best path not found :(")

@@ -1,4 +1,4 @@
-local Ant = {}
+local Ant   = {}
 Ant.__index = Ant
 
 local rand = math.random

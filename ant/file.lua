@@ -27,7 +27,7 @@ function File:read_as_graph()
         error("File contains only 1 line")
     end
 
-    local graph = { nodesCount = 0 }
+    local graph = {}
 
     for line in file:lines() do
         buf = {}
@@ -38,7 +38,6 @@ function File:read_as_graph()
 
         if graph[buf[1]] == nil then
             graph[buf[1]] = {}
-            graph.nodesCount = graph.nodesCount + 1
         end
 
         graph[buf[1]][buf[2]] = { weight = tonumber(buf[3]), pheromone = 1 }
