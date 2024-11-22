@@ -1,31 +1,28 @@
 #!/usr/bin/env lua
 
-local input_file = arg[1]
-local output_file = io.open("output.csv", "w")
+---@type string
+local GRAPH_INPUT_FILENAME = arg[1]
+local output_file = assert(io.open("output.csv", "w"))
 
-
-if not input_file then
+if not GRAPH_INPUT_FILENAME then
     print("Usage: lua main.lua <input_file>")
-    os.exit(1)
-end
-
-if not output_file then
     os.exit(1)
 end
 
 local File       = require("file")
 local Ant        = require("ant")
 
-local ALPHA      = os.getenv("ALPHA") or 1   -- важность феромонов
-local BETA       = os.getenv("BETA") or 1    -- важность весов
-local Q          = os.getenv("Q") or 4       -- интенсивность феромона
-local P          = os.getenv("P") or 0.6     -- процент остающихся феромонов
-local NUM_ANTS   = os.getenv("ANTS") or 100  -- Количество муравьев
-local NUM_ITERS  = os.getenv("ITERS") or 100 -- Количество итераций
-local START_NODE = os.getenv("START_NODE") or "RAND"   -- Начальная точка муравьев
+-- Ant algorithm settings
+local ALPHA      = os.getenv("ALPHA") or 1           -- важность феромонов
+local BETA       = os.getenv("BETA") or 1            -- важность весов
+local Q          = os.getenv("Q") or 4               -- интенсивность феромона
+local P          = os.getenv("P") or 0.6             -- процент остающихся феромонов
+local NUM_ANTS   = os.getenv("ANTS") or 100          -- количество муравьев
+local NUM_ITERS  = os.getenv("ITERS") or 100         -- количество итераций
+local START_NODE = os.getenv("START_NODE") or "RAND" -- начальная точка муравьев
 
--- Создаём экземпляр класса File
-local file = File:new(input_file)
+
+local file = File:new(GRAPH_INPUT_FILENAME)
 local nodesCount = 0
 
 local graph = file:read_as_graph()
@@ -59,9 +56,6 @@ output_file:write("iteration,best_route_length\n")
 local function update_edge_pheromone(source, target, delta)
     local edge = graph[source][target]
     edge.pheromone = P * edge.pheromone + delta
-
-    -- edge = graph[target][source]
-    -- edge.pheromone = P * edge.pheromone + delta
 end
 
 local startTime = os.clock()
@@ -73,7 +67,9 @@ for iter = 1, NUM_ITERS do
 
     -- Запускаем муравьев
     for i = 1, NUM_ANTS do
-        ants[i] = Ant:new(get_start_node())
+        local ant_start_node = get_start_node()
+
+        ants[i] = Ant:new(ant_start_node)
 
         local ant = ants[i]
 
@@ -84,8 +80,12 @@ for iter = 1, NUM_ITERS do
         end
 
         if #ant.path == #nodes and ant.total_distance < best_distance then
-            best_distance = ant.total_distance
-            best_path = ant.path
+            local is_moved_to_start = ant:move_to_node(ant_start_node, graph)
+
+            if is_moved_to_start then
+                best_distance = ant.total_distance
+                best_path = ant.path
+            end
         end
     end
 
