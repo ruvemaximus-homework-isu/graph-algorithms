@@ -3,6 +3,7 @@
 ---@type string
 local GRAPH_INPUT_FILENAME = arg[1]
 local output_file = assert(io.open("output.csv", "w"))
+local path_file = assert(io.open("path.csv", "w"))
 
 if not GRAPH_INPUT_FILENAME then
     print("Usage: lua main.lua <input_file>")
@@ -52,6 +53,7 @@ else
 end
 
 output_file:write("iteration,best_route_length\n")
+path_file:write(table.concat({ "ant", "path_length" }, ",") .. "\n")
 
 local function update_edge_pheromone(source, target, delta)
     local edge = graph[source][target]
@@ -79,14 +81,13 @@ for iter = 1, NUM_ITERS do
             ant:move_to_node(next_node, graph)
         end
 
-        if #ant.path == #nodes and ant.total_distance < best_distance then
-            local is_moved_to_start = ant:move_to_node(ant_start_node, graph)
+        local is_moved_to_start = ant:move_to_node(ant_start_node, graph)
 
-            if is_moved_to_start then
-                best_distance = ant.total_distance
-                best_path = ant.path
-            end
+        if is_moved_to_start and #ant.path == #nodes + 1 and ant.total_distance < best_distance then
+            best_distance = ant.total_distance
+            best_path = ant.path
         end
+        path_file:write(iter * NUM_ANTS + i .. "," .. ant.total_distance .. "\n")
     end
 
     -- Обновление феромонов
@@ -105,6 +106,7 @@ for iter = 1, NUM_ITERS do
 end
 
 output_file:close()
+path_file:close()
 
 if best_path == nil then
     print("Best path not found :(")
