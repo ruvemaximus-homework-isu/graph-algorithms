@@ -7,11 +7,12 @@ COLS = 7
 PLAYER = 1
 AI = 2
 EMPTY = 0
+ALPHA_BETA_DEPTH = 5
 
 # Цвета
 YELLOW_BOLD = "\033[93m\033[1m"
 BLUE = "\033[94m"  # Синий для игрока
-RED = "\033[91m"   # Красный для ИИ
+RED = "\033[91m"  # Красный для ИИ
 GRAY = "\033[90m"  # Серый для пустых клеток
 RESET = "\033[0m"  # Сброс цвета
 
@@ -56,7 +57,6 @@ def print_board(board):
     print()
 
 
-
 def winning_move(board, piece):
     """Проверяет, есть ли выигрышный ход для игрока piece."""
     # Проверка по горизонтали
@@ -91,18 +91,21 @@ def is_terminal_node(board):
     )
 
 
-def evaluate_window(window, piece):
+def evaluate_window(window, piece: PLAYER | AI):
     """Оценивает группу из 4 ячеек."""
     score = 0
     opp_piece = PLAYER if piece == AI else AI
 
-    if window.count(piece) == 4:
+    piece_count = window.count(piece)
+    empty_count = window.count(EMPTY)
+
+    if piece_count == 4:
         score += 100
-    elif window.count(piece) == 3 and window.count(EMPTY) == 1:
+    elif piece_count == 3 and empty_count == 1:
         score += 5
-    elif window.count(piece) == 2 and window.count(EMPTY) == 2:
+    elif piece_count == 2 and empty_count == 2:
         score += 2
-    if window.count(opp_piece) == 3 and window.count(EMPTY) == 1:
+    if window.count(opp_piece) == 3 and empty_count == 1:
         score -= 4
 
     return score
@@ -156,10 +159,9 @@ def alphabeta(board, depth, alpha, beta, maximizingPlayer):
                 return (None, math.inf)
             elif winning_move(board, PLAYER):
                 return (None, -math.inf)
-            else:  # Ничья
-                return (None, 0)
-        else:
-            return (None, score_position(board, AI))
+            return (None, 0)  # Ничья
+
+        return (None, score_position(board, AI))
 
     if maximizingPlayer:
         value = -math.inf
@@ -205,7 +207,7 @@ def play_game():
         if col == "q":
             print("Goodbye!")
             break
-        
+
         col = int(col)
 
         if is_valid_location(board, col):
@@ -221,7 +223,7 @@ def play_game():
 
         # Ход AI
         if not game_over:
-            col, _ = alphabeta(board, 4, -math.inf, math.inf, True)
+            col, _ = alphabeta(board, ALPHA_BETA_DEPTH, -math.inf, math.inf, True)
             if is_valid_location(board, col):
                 row = get_next_open_row(board, col)
                 drop_piece(board, row, col, AI)
@@ -230,6 +232,7 @@ def play_game():
                     game_over = True
 
             print_board(board)
+
 
 if __name__ == "__main__":
     play_game()
