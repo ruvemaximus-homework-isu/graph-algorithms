@@ -1,3 +1,5 @@
+import re
+import os
 import math
 import random
 
@@ -7,7 +9,9 @@ COLS = 7
 PLAYER = 1
 AI = 2
 EMPTY = 0
-ALPHA_BETA_DEPTH = 5
+ALPHA_BETA_DEPTH = int(os.getenv("ALPHA_BETA_DEPTH", 5))
+
+GET_INPUT_COLUMN_REGEX = re.compile(r"\d")
 
 # Цвета
 YELLOW_BOLD = "\033[93m\033[1m"
@@ -195,6 +199,25 @@ def alphabeta(board, depth, alpha, beta, maximizingPlayer):
         return best_col, value
 
 
+def parse_column_number_from_input(value: str):
+    return next(re.finditer(GET_INPUT_COLUMN_REGEX, value)).group()
+
+
+def get_user_move():
+    """Получаем ход пользователя"""
+    while True:
+        user_input = input("Укажите колонку (0-6) или [q]uit > ")
+
+        if user_input == "q":
+            print("Goodbye!")
+            os._exit(0)
+
+        try:
+            return int(parse_column_number_from_input(user_input))
+        except StopIteration:
+            print(f"'{user_input}' не содержит валидного значения!")
+
+
 def play_game():
     board = create_board()
     print_board(board)
@@ -202,13 +225,7 @@ def play_game():
 
     while not game_over:
         # Ход игрока
-        col = input("Укажите колонку (0-6) или [q]uit > ")
-
-        if col == "q":
-            print("Goodbye!")
-            break
-
-        col = int(col)
+        col = get_user_move()
 
         if is_valid_location(board, col):
             row = get_next_open_row(board, col)
