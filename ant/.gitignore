@@ -1,0 +1,6 @@
+# input files
+*.txt
+*.dat
+
+# output files
+*.csv
